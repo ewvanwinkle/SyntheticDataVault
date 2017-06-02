@@ -16,3 +16,4 @@ def FindDistribution(column):
     param = param[pvalue.index(max(pvalue))]
 
     return bestDistribution, param
+

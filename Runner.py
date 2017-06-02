@@ -19,3 +19,39 @@
 # 4) Synthesize data
 #   4a) Waaaay too far in advance
 
+
+import PullDataPostgreSQL
+import CleanData
+from CreateSchema import CreateSchema
+
+
+# connects to the database
+dbname = 'dvdrental'
+user = 'postgres'
+host = 'localhost'
+password = '@uckland1994'
+cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
+
+# creates a schema to be followed later
+schema = CreateSchema(cur, tableNames)
+
+# This section needs to be iteraated over every table in the database
+for table in tableNames:
+
+    # gets the data
+    data, colnames = PullDataPostgreSQL.ReadAndWriteTables(cur, table, save = 0)
+
+    # deals with missing values in the data
+
+
+
+
+
+
+
+
+
+
+
+
+

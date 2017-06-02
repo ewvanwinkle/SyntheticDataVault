@@ -1,4 +1,13 @@
 from scipy import stats
+import numpy as np
+
+def FindCovarianceRunner(dataFrame):
+
+    # iterates through the data by rows
+    copula = []
+    for row in dataFrame:
+        coupla[:x] = GaussianCopula(row)
+
 
 def GaussianCopula(row, metadata):
 
@@ -73,5 +82,5 @@ def GaussianCopula(row, metadata):
     return row
 
 
-def findCovariance():
+def findCovariance(data):
     stopYellingAtMe = 1
