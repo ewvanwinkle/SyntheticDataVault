@@ -1,7 +1,8 @@
 import numpy
 from collections import Counter
 import datetime
-from itertools import compress
+import pandas as pd
+import random
 
 
 
@@ -10,19 +11,60 @@ from itertools import compress
 # and filling missing data, identifying categorical and datetime variables,
 # and finally converting both of those into continuous data
 
-def IdentifyMissingValues(data):
+def MissingValues(df):
 
     # the point of this function is to deal with missing data points in a data set.
     # It creates a new column in the data identifying what points were missing.
+    # It then fills the missing values with random values from the row
 
-    # Iterates by column
+    x = 0
+    for column in df:
+
+        # if any values in the column are missing
+        if pd.isnull(df[column]).any():
+
+            # identifies missing values
+            logicalMissing = pd.isnull(df[column])
+            logicalFilled = [not i for i in logicalMissing]
+
+            # and fills them from a random point in the data
+            df[column].fillna(random.choice(df[column][logicalFilled] )
+                              , inplace=True)
+
+            # then fills in a new row indicating which values were missing
+            x = x+1
+            df.insert(x, column + '_MissingLogical', logicalMissing)
+
+        x = x+1
+
+    return df
 
 
-    logicalMissing = []
-    return logicalMissing
+
+def DatetimeToEPOCH(df):
+    # This function is a pretty basic for loop that determines whether or not a given
+    # feature is a datetime
+    logicalDatetime = []
+    x = 0
+
+    for column in df:
+        logicalDatetime[x] = isinstance(column[0], datetime.datetime)
+
+        # if the column contains datetimes
+        if logicalDatetime[x]:
+
+            # converts all datetimes to EPOCH
+            y = 0
+            for point in column:
+                df[column][y] = (point - datetime.datetime(1970, 1, 1)).total_seconds()
+                y = y+1
+        x = x+1
+
+    return df, logicalDatetime
 
 
-def IdentifyCategorical(data):
+
+def IdentifyCategorical(df):
     # I talked with other Eric and Melissa. We determined stopgap measures for
     # determining categorical variables.
     #
@@ -34,7 +76,7 @@ def IdentifyCategorical(data):
     logicalCategorical = []
     x = 0
 
-    for column in data:
+    for column in df:
 
         # checks for strings
         if len([x for x in str(column) if x.isnumeric()]) == 0:
@@ -51,44 +93,7 @@ def IdentifyCategorical(data):
     return logicalCategorical
 
 
-def IdentifyDatetime(data):
-    # This function is a pretty basic for loop that determines whether or not a given
-    # feature is a datetime
-
-    x = 0
-    column = data[0]
-    logicalDatetime = [0]*len(column)
-
-    for point in column:
-        logicalDatetime[x] = isinstance(point, datetime.datetime)
-        x = x+1
-
-    return logicalDatetime
-
-
-
-
-
-def FillMissingValues(data, logicalMissing):
-    # once missing values have been identified, they can be filled with a number
-    # from their respective distribution chosen at random
-
-    x = 0
-    for column in data:
-
-        logicalMissingColumn = logicalMissing[x]
-        data = list(compress(column, logicalMissingColumn))
-        y = 0
-
-        for logical in logicalMissingColumn:
-            if logical:
-                pass
-
-
-    return data
-
-
-def CategoricalToContinuous(data, logicalContinuous):
+def CategoricalToContinuous(df, logicalCategorical):
     # The SDV paper had a very specific method for dealing with categorical variables.
     # Since it cannot be modeled with CPA as is, it needs to be converted into
     # continuous data in order to effectively run. This is done through a 4 step
@@ -104,10 +109,10 @@ def CategoricalToContinuous(data, logicalContinuous):
     #
     # a graphical description can be viewed in Figure 6 of the SDV paper
 
-    return data
+    x = 0
+    for column in df:
+        if logicalCategorical[x]:
+            count = df[column].value_counts()
 
-def DatetimeToContinuous(data, logicalDatetime):
-    # All features identified as 'datetime features' will be converted to number
-    # of seconds past EPOCH.
+    return df
 
-    return data

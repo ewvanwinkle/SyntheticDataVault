@@ -1,5 +1,4 @@
 import scipy
-from CategoricalToContinuous import IdentifyCategorical
 
 # Conditional Parameter Aggregation (CPA) is one of the most important parts
 # of the entire SDV paper. It is what allows the user to synthesize an entire
@@ -10,13 +9,22 @@ from CategoricalToContinuous import IdentifyCategorical
 
 # 1) Start the extended table by saving all the data from the original table.
 # 2) Iteratively go through each value in the original table's primary key
-#   2a) Find all primary key value instances in all children tables
-#   2b) Go iteratively through each child table
-#       2bi) Perform Gaussian Copula and find feature covariance
-#       2bj) find alpha and beta values for distribution
-#       2bk) save all covariance and alpha beta values into the extended table
+#   2a) Go iteratively through each child table
+#       2ai) Find all primary key value instances in all children tables
+#       2aj) Perform Gaussian Copula and find feature covariance
+#       2ak) find alpha and beta values for distribution
+#       2al) save all covariance and alpha beta values into the extended table
 
 
-def ConditionalParameterAggregaation(extendedTable, children, table, data):
+def ConditionalParameterAggregaation(df, children, cur):
 
-    extendedTable[table] = data
+    # df is the information from the original table. This includes missing value indices
+    # and has all datetime values converted to EPOCH
+    #
+    # children is a list of all child tables
+    #
+    # cur is a database cursor object that will be used to pull data in the future
+
+
+
+    return dfExtended
