@@ -26,12 +26,17 @@ from CreateSchema import CreateSchema
 import pandas as pd
 import numpy as np
 import ConditionalParameterAggregation as CPA
+import datetime
+import random
+from collections import Counter
+
+
 
 # connects to the database
 dbname = 'dvdrental'
 user = 'postgres'
 host = 'localhost'
-password = '@uckland1994'
+password = ''
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
 
 # creates a schema to be followed later
@@ -45,6 +50,10 @@ for table in tableNames:
     df = pd.DataFrame(data, columns = colnames)
     df.fillna(value=np.nan, inplace=True)
 
+    # because fuck that particular column
+    if table == 'staff':
+        df = df.drop('picture',1)
+
     # deals with missing values in the data. Will fill any missing values with a
     # random point from the dataset. Also creates a new column to identify each
     # value as a either missing or not since this can be relevant data itself
@@ -52,19 +61,22 @@ for table in tableNames:
 
     # deals with datetime values in the data. uses the datetime module to convert all
     # datetime values to EPOCH
-    df, logicalDatetime = CleanData.DatetimeToEPOCH(df)
+    dfData = df.loc[:, ~df.columns.str.contains('_id')]
+    dfData = CleanData.DatetimeToEPOCH(dfData)
 
     # Deals with categorical features in the data. this is actually somewhat
     # complicated of a process. First to identify them as categorical, several
     # constraints have been set. they can be seen in depth inside the first function.
     # then to convert values ot continuous, the methodology in the SDV is followed
     # closely. it can be viewed clearly in the SDV paper itself
-    logicalCategorical = CleanData.IdentifyCategorical(df)
-    data = CleanData.CategoricalToContinuous(df,logicalCategorical)
+    #logicalCategorical = CleanData.IdentifyCategorical(df)
+
+    logicalCategorical = CleanData.IdentifyCategorical(dfData)
+    dfData = CleanData.CategoricalToContinuous(dfData,logicalCategorical)
 
     # now for the meat of the algorithm: Conditional Parameter Aggregation
     # go inside to file for more details
-    dfExtended = CPA.ConditionalParameterAggregaation()
+    #dfExtended = CPA.ConditionalParameterAggregaation()
 
 
 

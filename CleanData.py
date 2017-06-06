@@ -1,8 +1,10 @@
-import numpy
+import numpy as np
 from collections import Counter
 import datetime
 import pandas as pd
 import random
+from scipy import stats
+import matplotlib.pyplot as plt
 
 
 
@@ -44,23 +46,26 @@ def MissingValues(df):
 def DatetimeToEPOCH(df):
     # This function is a pretty basic for loop that determines whether or not a given
     # feature is a datetime
-    logicalDatetime = []
-    x = 0
 
     for column in df:
-        logicalDatetime[x] = isinstance(column[0], datetime.datetime)
 
         # if the column contains datetimes
-        if logicalDatetime[x]:
+        if isinstance(df[column][0], datetime.datetime):
 
             # converts all datetimes to EPOCH
             y = 0
-            for point in column:
-                df[column][y] = (point - datetime.datetime(1970, 1, 1)).total_seconds()
-                y = y+1
-        x = x+1
+            try:
+                df[column + '_EPOCH'] = [0]*len(df)
+            except:
+                pass
 
-    return df, logicalDatetime
+            for y in range(len(df[column])):
+                df.loc[y, column + '_EPOCH'] = (df.loc[y, column] - datetime.datetime(1970, 1, 1)).total_seconds()
+                y = y+1
+
+            df = df.drop(column,1)
+
+    return df
 
 
 
@@ -73,22 +78,26 @@ def IdentifyCategorical(df):
     # 3) the numbers are all integers
     # 4) any given number had more than 10% of the instances
 
-    logicalCategorical = []
+    logicalCategorical = [0] * len(df.columns)
     x = 0
 
     for column in df:
 
         # checks for strings
-        if len([x for x in str(column) if x.isnumeric()]) == 0:
+        if isinstance(df[column][0], str):
             logicalCategorical[x] = 1
+            x = x+1
+            continue
 
         # applies mathematical constraints
-        if len(numpy.unique(column)) < len(column)/2:
+        if len(df[column].unique()) < len(df[column])/2:
             logicalCategorical[x] = 1
-        elif sum(column % 1) == 0:
+        elif all(df[column] % 1 == 0):
             logicalCategorical[x] = 1
-        elif Counter(column).most_common()[0][1] > len(column)/10:
+        elif Counter(df[column]).most_common()[0][1] > len(df[column])/10:
             logicalCategorical[x] = 1
+
+        x = x+1
 
     return logicalCategorical
 
@@ -109,10 +118,49 @@ def CategoricalToContinuous(df, logicalCategorical):
     #
     # a graphical description can be viewed in Figure 6 of the SDV paper
 
+    # random values for easy debugging
+    df = [random.sample([1,2,3,4,5], 1) for _ in range(500)]
+    df = pd.DataFrame([item[0] for item in df])
+
+
     x = 0
     for column in df:
+
         if logicalCategorical[x]:
+
             count = df[column].value_counts()
+            count = count.to_frame()
+
+            # finds the intervals for each individual categorical variable on an
+            # interval between 0 and 1
+            startpoint = [0]*len(count)
+            endpoint = [0]*len(count)
+            y = 0
+            for index, row in count.iterrows():
+                endpoint[y] = startpoint[y] + row[0]/len(df)
+
+                # allows for the initial startpoint to be 0.
+                # basically lets me ignore indexing
+                try:
+                    startpoint[y + 1] = startpoint[y] + row[0]/len(df)
+                except:
+                    pass
+                y = y+1
+
+            # for all pairs of start and end points, create normal data with
+            # a mean in the middle of the points and a std of the maximum possible
+            # range divided by 6. should also be the size of the number of counts
+            data = [0]*len(count)
+            for y in range(len(count)):
+                start = float(startpoint[y])
+                end = float(endpoint[y])
+                mean = (start + end) / 2
+                scale = (end - start) / 6
+                size = round(scale*len(df)*6)
+                data[y] = stats.norm.rvs(loc=mean, scale=scale, size=size)
+                plt.hist(data[y], 50, normed=1, facecolor='green', alpha=0.5)
+
+            data = np.concatenate(data)
 
     return df
 
