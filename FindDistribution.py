@@ -1,19 +1,27 @@
 from scipy import stats
+import numpy as np
 
+def FindDistribution(dataColumn, *args):
 
-def FindDistribution(column):
+    try:
+        distributionTypes = args[0]
+    except:
+        distributionTypes = ['truncnorm', 'beta', 'expon', 'uniform']
 
-    distributionTypes = ['truncnorm', 'beta', 'expon', 'uniform']
-    param = [0,0,0,0]
-    pvalue = [0,0,0,0]
+    l = len(distributionTypes)
 
-    for x in [0,1,2,3]:
+    param = [0]*l
+    pvalue = [0]*l
 
-        param[x] = eval('stats.%s.fit(column)' % distributionTypes[x])
-        pvalue[x] = stats.kstest(column, distributionTypes[x], param[x])[1]
+    for x in range(l-1):
+
+        param[x]
+        distributionTypes[x]
+        param[x] = eval('stats.%s.fit(dataColumn)' % distributionTypes[x])
+        pvalue[x] = stats.kstest(dataColumn, distributionTypes[x], param[x])[1]
 
     bestDistribution = distributionTypes[pvalue.index(max(pvalue))]
     param = param[pvalue.index(max(pvalue))]
 
-    return bestDistribution, param
+    return bestDistribution, param, pvalue
 

@@ -76,7 +76,7 @@ for table in tableNames:
 
     # now for the meat of the algorithm: Conditional Parameter Aggregation
     # go inside to file for more details
-    #dfExtended = CPA.ConditionalParameterAggregaation()
+    # dfExtended = CPA.ConditionalParameterAggregaation()
 
 
 
