@@ -20,39 +20,74 @@ import CleanData
 #       2ak) find alpha and beta values for distribution
 #       2al) save all covariance and alpha beta values into the extended table
 
-def MakeFakeData():
+def MakeFakeData(Continuous):
     # I'm making fake data to debug this with
-    primaryKey = np.linspace(1,100, num=100)
-    data1 = stats.norm.rvs(loc=10, scale=1, size=100)
-    data2 = stats.norm.rvs(loc=20, scale=1, size=100)
-    data3 = stats.norm.rvs(loc=5, scale=2, size=100)
-    data4 = stats.norm.rvs(loc=100, scale=10, size=100)
-    df = np.concatenate([primaryKey, data1, data2, data3, data4])
-    df = df.reshape([5, 100])
-    df = pd.DataFrame(df.T)
-    df.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+    # if you want all continuous data:
+    if Continuous == 1:
+        primaryKey = np.linspace(1,100, num=100)
+        data1 = stats.norm.rvs(loc=10, scale=1, size=100)
+        data2 = stats.norm.rvs(loc=20, scale=1, size=100)
+        data3 = stats.norm.rvs(loc=5, scale=2, size=100)
+        data4 = stats.norm.rvs(loc=100, scale=10, size=100)
+        df = np.concatenate([primaryKey, data1, data2, data3, data4])
+        df = df.reshape([5, 100])
+        df = pd.DataFrame(df.T)
+        df.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
 
-    foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
-    foreignKey = np.array([item[0] for item in foreignKey])
-    data1 = stats.norm.rvs(loc=60, scale=1.5, size=500)
-    data2 = stats.norm.rvs(loc=30, scale=3, size=500)
-    data3 = stats.norm.rvs(loc=5, scale=4, size=500)
-    data4 = stats.norm.rvs(loc=100, scale=1, size=500)
-    child1 = np.concatenate([foreignKey, data1, data2, data3, data4])
-    child1 = child1.reshape([5, 500])
-    child1 = pd.DataFrame(child1.T)
-    child1.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+        foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
+        foreignKey = np.array([item[0] for item in foreignKey])
+        data1 = stats.norm.rvs(loc=60, scale=1.5, size=500)
+        data2 = stats.norm.rvs(loc=30, scale=3, size=500)
+        data3 = stats.norm.rvs(loc=5, scale=4, size=500)
+        data4 = stats.norm.rvs(loc=100, scale=1, size=500)
+        child1 = np.concatenate([foreignKey, data1, data2, data3, data4])
+        child1 = child1.reshape([5, 500])
+        child1 = pd.DataFrame(child1.T)
+        child1.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
 
-    foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
-    foreignKey = np.array([item[0] for item in foreignKey])
-    data1 = stats.norm.rvs(loc=6, scale=5, size=500)
-    data2 = stats.norm.rvs(loc=35, scale=3.5, size=500)
-    data3 = stats.norm.rvs(loc=2, scale=.5, size=500)
-    data4 = stats.norm.rvs(loc=10, scale=2, size=500)
-    child2 = np.concatenate([foreignKey, data1, data2, data3, data4])
-    child2 = child2.reshape([5, 500])
-    child2 = pd.DataFrame(child2.T)
-    child2.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+        foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
+        foreignKey = np.array([item[0] for item in foreignKey])
+        data1 = stats.norm.rvs(loc=6, scale=5, size=500)
+        data2 = stats.norm.rvs(loc=35, scale=3.5, size=500)
+        data3 = stats.norm.rvs(loc=2, scale=.5, size=500)
+        data4 = stats.norm.rvs(loc=10, scale=2, size=500)
+        child2 = np.concatenate([foreignKey, data1, data2, data3, data4])
+        child2 = child2.reshape([5, 500])
+        child2 = pd.DataFrame(child2.T)
+        child2.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+    else:
+
+        primaryKey = np.linspace(1,100, num=100)
+        data1 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(100)]]
+        data2 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(100)]]
+        data3 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(100)]]
+        data4 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(100)]]
+        df = np.concatenate([primaryKey, data1, data2, data3, data4])
+        df = df.reshape([5, 100])
+        df = pd.DataFrame(df.T)
+        df.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+
+        foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
+        foreignKey = np.array([item[0] for item in foreignKey])
+        data1 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data2 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data3 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data4 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        child1 = np.concatenate([foreignKey, data1, data2, data3, data4])
+        child1 = child1.reshape([5, 500])
+        child1 = pd.DataFrame(child1.T)
+        child1.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
+
+        foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
+        foreignKey = np.array([item[0] for item in foreignKey])
+        data1 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data2 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data3 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data4 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        child2 = np.concatenate([foreignKey, data1, data2, data3, data4])
+        child2 = child2.reshape([5, 500])
+        child2 = pd.DataFrame(child2.T)
+        child2.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
 
     return df, child1, child2
 
@@ -68,20 +103,29 @@ def ConditionalParameterAggregaation(df, children, cur):
     # cur is a database cursor object that will be used to pull data in the future
 
     # makes fake data so I dont have to clean just yet
-    df, child1, child2 = MakeFakeData()
+    df, child1, child2 = MakeFakeData(0)
     children = ['child1', 'child2']
 
 
     # now that we have a parent table and two child tables all containing continuous data,
     # I can work on the CPA algorithm
-
-    extendedTable = []
-    y = 0
+    x = 0
+    extendedTable = [0]*len(children)
     for child in children:
 
         child = eval(child)
+
         # saves all data as categorical or not
         logicalCategorical = CleanData.IdentifyCategorical(child)
+        extendedTableTemp = [0]*len(df)
+        y = 0
+
+        uniqueCategories = [0]*len(child.columns)
+        # find all possible options for categorical variables
+        for x in range(len(child.columns)):
+            if logicalCategorical[x]:
+
+
 
         # iterate over all IDs in the primary key
         for ID in df[df.columns[0]]:
@@ -89,22 +133,39 @@ def ConditionalParameterAggregaation(df, children, cur):
             # pulls all data in the child table corresponding to the specific ID
             data = pd.DataFrame(child[child[df.columns[0]] == ID])
 
-            x = 0
             for column in data.columns[1:]:
 
                 # if the column is continuous
-                if logicalCategorical[x+1] == 0:
-
+                if logicalCategorical[(y % 4) + 1] == 0:
                     # fit the data to a beta distribution and append it to the extended table
-                    _, param, _ = FindDistribution(data[column], ['beta'])
-                    extendedTable.extend(param)
+                    if len(data) == 0:
+                        extendedTableTemp[y] = tuple( [None]*4 )
+                    else:
+                        extendedTableTemp[y] = stats.beta.fit(data[column])
+
 
                 # if the column is categorical
                 else:
-                    pass
+                    if len(data) == 0:
+                        extendedTableTemp[y] = tuple( [None]*(len(df.columns)-1) )
+                    else:
 
-                x = x+1
+
+
+
             y = y+1
+
+        extendedTable[x] = extendedTableTemp
+        x = x + 1
+
+
+    # reshapes the table
+    for x in range(len(extendedTable)):
+        colnames = ['alpha_%s'% children[x], 'beta_%s'% children[x],
+                    'loc_%s' % children[x], 'scale_%s'% children[x]]
+        df = pd.concat([df, pd.DataFrame(extendedTable[x], columns=colnames)], axis=1)
+
+
 
     return extendedTable
 

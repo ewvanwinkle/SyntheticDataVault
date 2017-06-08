@@ -13,10 +13,8 @@ def FindDistribution(dataColumn, *args):
     param = [0]*l
     pvalue = [0]*l
 
-    for x in range(l-1):
+    for x in range(l):
 
-        param[x]
-        distributionTypes[x]
         param[x] = eval('stats.%s.fit(dataColumn)' % distributionTypes[x])
         pvalue[x] = stats.kstest(dataColumn, distributionTypes[x], param[x])[1]
 
