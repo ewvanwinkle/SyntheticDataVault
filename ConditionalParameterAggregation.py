@@ -2,7 +2,6 @@ from scipy import stats
 import random
 import numpy as np
 import pandas as pd
-from FindDistribution import FindDistribution
 import CleanData
 
 # Conditional Parameter Aggregation (CPA) is one of the most important parts
@@ -21,8 +20,8 @@ import CleanData
 #       2al) save all covariance and alpha beta values into the extended table
 
 def MakeFakeData(Continuous):
-    # I'm making fake data to debug this with
-    # if you want all continuous data:
+    # I'm making fake data to debug this with. It's a temporary funcution
+
     if Continuous == 1:
         primaryKey = np.linspace(1,100, num=100)
         data1 = stats.norm.rvs(loc=10, scale=1, size=100)
@@ -80,10 +79,10 @@ def MakeFakeData(Continuous):
 
         foreignKey = [random.sample(primaryKey.tolist(), 1) for _ in range(500)]
         foreignKey = np.array([item[0] for item in foreignKey])
-        data1 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
-        data2 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
-        data3 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
-        data4 = [i[0] for i in [random.sample([1, 2, 3, 4, 5], 1) for _ in range(500)]]
+        data1 = [i[0] for i in [random.sample([10, 20, 30, 40, 50], 1) for _ in range(500)]]
+        data2 = [i[0] for i in [random.sample([10, 20, 30, 40, 50], 1) for _ in range(500)]]
+        data3 = [i[0] for i in [random.sample([10, 20, 30, 40, 50], 1) for _ in range(500)]]
+        data4 = [i[0] for i in [random.sample([10, 20, 30, 40, 50], 1) for _ in range(500)]]
         child2 = np.concatenate([foreignKey, data1, data2, data3, data4])
         child2 = child2.reshape([5, 500])
         child2 = pd.DataFrame(child2.T)
@@ -115,55 +114,69 @@ def ConditionalParameterAggregaation(df, children, cur):
 
         child = eval(child)
 
-        # saves all data as categorical or not
+        # saves all data as categorical or not. ignores the primary key
         logicalCategorical = CleanData.IdentifyCategorical(child)
-        extendedTableTemp = [0]*len(df)
-        y = 0
+        logicalCategorical = logicalCategorical[1:]
 
-        uniqueCategories = [0]*len(child.columns)
-        # find all possible options for categorical variables
-        for x in range(len(child.columns)):
-            if logicalCategorical[x]:
-
-
+        # find all possible options for categorical variables and saves them
+        uniqueCategories = [0] * (len(child.columns))
+        for y in range(1,len(child.columns)):
+            if logicalCategorical[y-1]:
+                uniqueCategories[y] = child[child.columns[y]].unique().tolist()
+        uniqueCategories = uniqueCategories[1:]
 
         # iterate over all IDs in the primary key
+        y = 0
+        extendedTable[x] = [0]*len(df)
         for ID in df[df.columns[0]]:
 
             # pulls all data in the child table corresponding to the specific ID
             data = pd.DataFrame(child[child[df.columns[0]] == ID])
 
+            # iterates over every column in the dataset
+            z = 0
+            extendedTable[x][y] = [0]*len(child.columns)
             for column in data.columns[1:]:
 
                 # if the column is continuous
-                if logicalCategorical[(y % 4) + 1] == 0:
+                if logicalCategorical[z] == 0:
                     # fit the data to a beta distribution and append it to the extended table
                     if len(data) == 0:
-                        extendedTableTemp[y] = tuple( [None]*4 )
+                        extendedTable[x][y][z] = tuple( [None]*4 )
+                        continue
                     else:
-                        extendedTableTemp[y] = stats.beta.fit(data[column])
+                        extendedTable[x][y][z] = stats.beta.fit(data[column])
 
-
-                # if the column is categorical
                 else:
+
+                    # initial dataframe to make sure that numbers aren't left out
+                    d1 = pd.DataFrame([0] * len(uniqueCategories[z])).T
+                    d1.columns = uniqueCategories[z]
+                    # finds the percentage of each variable in the column of the temporary
+                    # dataset. then saves that
                     if len(data) == 0:
-                        extendedTableTemp[y] = tuple( [None]*(len(df.columns)-1) )
+                        extendedTable[x][y][z] = tuple( [None]*(len(uniqueCategories[z])) )
                     else:
+                        count = data[column].value_counts()
+                        count = (count + d1) / sum(count)
+                        count[count.isnull()] = 0
+                        extendedTable[x][y][z] = tuple(map(tuple, count.as_matrix()))[0]
 
+                # move onto next column
+                z = z+1
 
-
-
+            # move onto next ID
             y = y+1
 
-        extendedTable[x] = extendedTableTemp
-        x = x + 1
+        # save data and move on to next table
+        x = x+1
 
 
     # reshapes the table
     for x in range(len(extendedTable)):
-        colnames = ['alpha_%s'% children[x], 'beta_%s'% children[x],
-                    'loc_%s' % children[x], 'scale_%s'% children[x]]
-        df = pd.concat([df, pd.DataFrame(extendedTable[x], columns=colnames)], axis=1)
+        #colnames = ['alpha_%s'% children[x], 'beta_%s'% children[x],
+        #            'loc_%s' % children[x], 'scale_%s'% children[x]]
+        df = pd.concat([df, pd.DataFrame(extendedTable[x])], axis=1)
 
 
 

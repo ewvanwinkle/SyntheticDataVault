@@ -102,7 +102,7 @@ def IdentifyCategorical(df):
     return logicalCategorical
 
 
-def CategoricalToContinuous(df, logicalCategorical):
+def CategoricalToContinuous(df, logicalCategorical, createData):
     # The SDV paper had a very specific method for dealing with categorical variables.
     # Since it cannot be modeled with CPA as is, it needs to be converted into
     # continuous data in order to effectively run. This is done through a 4 step
