@@ -112,18 +112,23 @@ def ConditionalParameterAggregaation(df, children, cur):
     extendedTable = [0]*len(children)
     for child in children:
 
+
         child = eval(child)
 
-        # saves all data as categorical or not. ignores the primary key
+        # saves all data as categorical or not.
         logicalCategorical = CleanData.IdentifyCategorical(child)
-        logicalCategorical = logicalCategorical[1:]
 
         # find all possible options for categorical variables and saves them
         uniqueCategories = [0] * (len(child.columns))
         for y in range(1,len(child.columns)):
-            if logicalCategorical[y-1]:
+            if logicalCategorical[y]:
                 uniqueCategories[y] = child[child.columns[y]].unique().tolist()
+
+        # ignores primary key
         uniqueCategories = uniqueCategories[1:]
+        logicalCategorical = logicalCategorical[1:]
+
+
 
         # iterate over all IDs in the primary key
         y = 0
@@ -135,17 +140,17 @@ def ConditionalParameterAggregaation(df, children, cur):
 
             # iterates over every column in the dataset
             z = 0
-            extendedTable[x][y] = [0]*len(child.columns)
+            extendedTable[x][y] = [0] * (len(child.columns)-1)
             for column in data.columns[1:]:
 
                 # if the column is continuous
                 if logicalCategorical[z] == 0:
                     # fit the data to a beta distribution and append it to the extended table
                     if len(data) == 0:
-                        extendedTable[x][y][z] = tuple( [None]*4 )
+                        extendedTable[x][y][z] = [None]*4
                         continue
                     else:
-                        extendedTable[x][y][z] = stats.beta.fit(data[column])
+                        extendedTable[x][y][z] = list(stats.beta.fit(data[column]))
 
                 else:
 
@@ -155,12 +160,13 @@ def ConditionalParameterAggregaation(df, children, cur):
                     # finds the percentage of each variable in the column of the temporary
                     # dataset. then saves that
                     if len(data) == 0:
-                        extendedTable[x][y][z] = tuple( [None]*(len(uniqueCategories[z])) )
+                        extendedTable[x][y][z] = [None]*(len(uniqueCategories[z]))
                     else:
                         count = data[column].value_counts()
                         count = (count + d1) / sum(count)
                         count[count.isnull()] = 0
-                        extendedTable[x][y][z] = tuple(map(tuple, count.as_matrix()))[0]
+                        extendedTable[x][y][z] = list(map(list, count.as_matrix()))[0]
+
 
                 # move onto next column
                 z = z+1
@@ -168,18 +174,56 @@ def ConditionalParameterAggregaation(df, children, cur):
             # move onto next ID
             y = y+1
 
-        # save data and move on to next table
+
+        # populates a fake dataframe. Includes column names and proper size
+        # first we must go through every column in the child table.
+        # For categorical ones, we must create a column for each category.
+        # For continuous, we must create 4 columns for beat distribution values
+        for a in range(len(child.columns[1:])):
+            column = child.columns[1:][a]
+
+            if logicalCategorical[a] == 0:
+
+                colnames = ['Cont_alpha_%(1)s_%(2)s', 'Cont_beta_%(1)s_%(2)s',
+                            'Cont_loc_%(1)s_%(2)s', 'Cont_scale_%(1)s_%(2)s']
+                colnames = [colnames[i] % {'1': column, '2': children[x]}
+                            for i in range(len(colnames))]
+
+            else:
+
+                colnames = [0] * len(uniqueCategories[a])
+                for b in range(len(uniqueCategories[a])):
+                    cat = uniqueCategories[a][b]
+                    colnames[b] = 'Categ_%s_%s_%s' % (cat, column, children[x])
+
+            df = pd.concat([df, pd.DataFrame(np.zeros([len(df), len(colnames)]),
+                                             columns=[colnames])], axis=1)
+
+
+        # Takes all of the data and puts it into the proper allocated location within df
+
+        # Iterates over IDs
+        for y in range(len(extendedTable[x])):
+
+            # Iterate over variables. Having problems with this for some reason
+            for z in range(1,len(extendedTable[x][y])):
+                variable = child.columns[z]
+
+                # iterate over categories. Skips
+                for a in range(len(extendedTable[x][y][z])):
+
+                    point = extendedTable[x][y][z-1][a]
+
+                    if logicalCategorical[z] == 0:
+                        for b in ['alpha', 'beta', 'loc', 'scale']:
+                            df['Cont_%s_%s_%s', (b, variable, children[x])] = point
+                    else:
+                        for b in uniqueCategories[z]:
+                            df['Categ_%s_%s_%s' % (b, variable, children[x])][y] = point
+
+        # move on to next table
         x = x+1
 
-
-    # reshapes the table
-    for x in range(len(extendedTable)):
-        #colnames = ['alpha_%s'% children[x], 'beta_%s'% children[x],
-        #            'loc_%s' % children[x], 'scale_%s'% children[x]]
-        df = pd.concat([df, pd.DataFrame(extendedTable[x])], axis=1)
-
-
-
-    return extendedTable
+    return df
 
 ConditionalParameterAggregaation(1,1,1)
