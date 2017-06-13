@@ -1,44 +1,38 @@
 from scipy import stats
 import numpy as np
 
-def FindCovarianceRunner(dataFrame):
 
-    # iterates through the data by rows
-    copula = []
-    for row in dataFrame:
-        coupla[:x] = GaussianCopula(row)
-
-
-def GaussianCopula(row, metadata):
+def GaussianCopula(row, metadata, logicalCategorical):
 
     # This function takes in a row of data. It also takes in a list of metadata.
-    # The metadata should identify the feature distribution, its associated parameters,
-    # and whether or not the feature is continuous.
+    # The metadata should identify the feature distribution type ('beta' vs. 'normal'),
+    # its associated parameters, and whether or not the feature is continuous.
 
-    # the purpose of this function is to convert a dataset of varying distributions
-    # into solely gaussian normal variables. An unbiased estimation of covariance
-    # can then be found from this "gaussian copula".
+    # the purpose of this function is to convert a dataset of varying CONTINUOUS
+    # distributions into solely gaussian normal variables. An unbiased estimation
+    # of covariance can then be found from this "gaussian copula".
 
 
-    # 1) Take the column's CDf of the specific point
+    # 1) Take the column's CDF of the specific point
     # This is done using a for loop for each point in the row and
     # an if statement for each of the four distributions
-    x = 0
+    for x in range(len(row)):
 
-    for point in row:
+        point = row[x]
+        columnInfo = metadata[x]
+        categorical = logicalCategorical[x]
 
-        feature = metadata[x]
 
         # this function doesnt currently account for categorical variables.
         # skips that until later
-        if feature[2] == 1:
+        if categorical == 1:
             print("This feature is categorical. Create a function for this later")
             continue
 
 
         # identifies the distribution needing to be used
-        distribution = feature[0]
-        param = feature[1]
+        distribution = columnInfo[0]
+        param = columnInfo[1]
 
         # finds the CDF of each distribution individually
         if distribution == 'beta':

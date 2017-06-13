@@ -3,6 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 import CleanData
+import PullDataPostgreSQL
 
 # Conditional Parameter Aggregation (CPA) is one of the most important parts
 # of the entire SDV paper. It is what allows the user to synthesize an entire
@@ -93,7 +94,6 @@ def MakeFakeData(Continuous):
 
 
 def ConditionalParameterAggregaation(df, children, cur):
-
     # df is the information from the original table. This includes missing value indices
     # and has all datetime values converted to EPOCH
     #
@@ -101,129 +101,106 @@ def ConditionalParameterAggregaation(df, children, cur):
     #
     # cur is a database cursor object that will be used to pull data in the future
 
-    # makes fake data so I dont have to clean just yet
-    df, child1, child2 = MakeFakeData(0)
-    children = ['child1', 'child2']
-
 
     # now that we have a parent table and two child tables all containing continuous data,
     # I can work on the CPA algorithm
     x = 0
-    extendedTable = [0]*len(children)
+    extendedTable = [0] * len(children)
     for child in children:
 
+        child, _ = PullDataPostgreSQL.ReadAndWriteTables(cur, child, save=0)
 
-        child = eval(child)
-
-        # saves all data as categorical or not.
+        # saves all data as categorical or not. ignores the primary key
         logicalCategorical = CleanData.IdentifyCategorical(child)
 
-        # find all possible options for categorical variables and saves them
-        uniqueCategories = [0] * (len(child.columns))
-        for y in range(1,len(child.columns)):
+
+        # populates a fake dataframe with dummy data.
+        # uses column names as metadata storage
+        # ignores the primary key
+        for y in range(1, len(child.columns)):
+
+            column = child.columns[y]
+
+            # For categorical ones, we must create a column for each category.
             if logicalCategorical[y]:
-                uniqueCategories[y] = child[child.columns[y]].unique().tolist()
 
-        # ignores primary key
-        uniqueCategories = uniqueCategories[1:]
-        logicalCategorical = logicalCategorical[1:]
+                uniqueCategories = child[child.columns[y]].unique().tolist()
+                for z in range(len(uniqueCategories)):
+                    cat = uniqueCategories[z]
+                    colname = 'Categ_%s_%s_%s' % (cat, column, childstr)
+                    df = pd.concat([df, pd.DataFrame(np.zeros([len(df)]), columns=[colname])], axis=1)
+
+            # For continuous, we must create 4 columns for beta distribution values
+            else:
+                points = ['alpha', 'beta', 'loc', 'scale']
+                for z in range(4):
+                    colname = 'Cont_%s_%s_%s' % (points[z], column, childstr)
+                    df = pd.concat([df, pd.DataFrame(np.zeros([len(df)]), columns=[colname])], axis=1)
 
 
 
-        # iterate over all IDs in the primary key
-        y = 0
-        extendedTable[x] = [0]*len(df)
-        for ID in df[df.columns[0]]:
+        # iterate over all IDs in the primary key with the intent of finding and inputting
+        # data
+        for c in range(len(df[df.columns[0]])):
+
+            ID = df[df.columns[0]][c]
 
             # pulls all data in the child table corresponding to the specific ID
             data = pd.DataFrame(child[child[df.columns[0]] == ID])
 
             # iterates over every column in the dataset
-            z = 0
-            extendedTable[x][y] = [0] * (len(child.columns)-1)
-            for column in data.columns[1:]:
+            for y in range(1, len(child.columns)):
 
-                # if the column is continuous
-                if logicalCategorical[z] == 0:
-                    # fit the data to a beta distribution and append it to the extended table
-                    if len(data) == 0:
-                        extendedTable[x][y][z] = [None]*4
-                        continue
-                    else:
-                        extendedTable[x][y][z] = list(stats.beta.fit(data[column]))
+                column = child.columns[y]
 
-                else:
+                # if the column is Categorical
+                if logicalCategorical[y]:
 
-                    # initial dataframe to make sure that numbers aren't left out
-                    d1 = pd.DataFrame([0] * len(uniqueCategories[z])).T
-                    d1.columns = uniqueCategories[z]
+                    uniqueCategories = child[child.columns[y]].unique().tolist()
                     # finds the percentage of each variable in the column of the temporary
                     # dataset. then saves that
                     if len(data) == 0:
-                        extendedTable[x][y][z] = [None]*(len(uniqueCategories[z]))
+
+                        for z in range(len(uniqueCategories)):
+                            cat = uniqueCategories[z]
+                            colname = 'Categ_%s_%s_%s' % (cat, column, childstr)
+                            df[colname][c] = None
+
                     else:
+
+                        # initial dataframe to make sure that numbers aren't left out
+                        d1 = pd.DataFrame([0] * len(uniqueCategories)).T
+                        d1.columns = uniqueCategories
+
+                        # finds the percentages to be added to the df
                         count = data[column].value_counts()
                         count = (count + d1) / sum(count)
                         count[count.isnull()] = 0
-                        extendedTable[x][y][z] = list(map(list, count.as_matrix()))[0]
 
+                        # adds the points to the correct column
+                        for z in range(len(uniqueCategories)):
+                            cat = uniqueCategories[z]
+                            colname = 'Categ_%s_%s_%s' % (cat, column, childstr)
+                            df[colname][c] = count[cat]
 
-                # move onto next column
-                z = z+1
+                # if the data is continuous
+                else:
 
-            # move onto next ID
-            y = y+1
-
-
-        # populates a fake dataframe. Includes column names and proper size
-        # first we must go through every column in the child table.
-        # For categorical ones, we must create a column for each category.
-        # For continuous, we must create 4 columns for beat distribution values
-        for a in range(len(child.columns[1:])):
-            column = child.columns[1:][a]
-
-            if logicalCategorical[a] == 0:
-
-                colnames = ['Cont_alpha_%(1)s_%(2)s', 'Cont_beta_%(1)s_%(2)s',
-                            'Cont_loc_%(1)s_%(2)s', 'Cont_scale_%(1)s_%(2)s']
-                colnames = [colnames[i] % {'1': column, '2': children[x]}
-                            for i in range(len(colnames))]
-
-            else:
-
-                colnames = [0] * len(uniqueCategories[a])
-                for b in range(len(uniqueCategories[a])):
-                    cat = uniqueCategories[a][b]
-                    colnames[b] = 'Categ_%s_%s_%s' % (cat, column, children[x])
-
-            df = pd.concat([df, pd.DataFrame(np.zeros([len(df), len(colnames)]),
-                                             columns=[colnames])], axis=1)
-
-
-        # Takes all of the data and puts it into the proper allocated location within df
-
-        # Iterates over IDs
-        for y in range(len(extendedTable[x])):
-
-            # Iterate over variables. Having problems with this for some reason
-            for z in range(1,len(extendedTable[x][y])):
-                variable = child.columns[z]
-
-                # iterate over categories. Skips
-                for a in range(len(extendedTable[x][y][z])):
-
-                    point = extendedTable[x][y][z-1][a]
-
-                    if logicalCategorical[z] == 0:
-                        for b in ['alpha', 'beta', 'loc', 'scale']:
-                            df['Cont_%s_%s_%s', (b, variable, children[x])] = point
+                    points = ['alpha', 'beta', 'loc', 'scale']
+                    # fit the data to a beta distribution and append it to the extended table
+                    # initial dataframe to make sure that numbers aren't left out
+                    if len(data) == 0:
+                        for z in range(3):
+                            colname = 'Cont_%s_%s_%s' % (points[z], column, childstr)
+                            df[colname][c] = None
                     else:
-                        for b in uniqueCategories[z]:
-                            df['Categ_%s_%s_%s' % (b, variable, children[x])][y] = point
+                        statistics = list(stats.beta.fit(data[column]))
+                        for z in range(4):
+                            colname = 'Cont_%s_%s_%s' % (points[z], column, childstr)
+                            df[colname][c] = statistics[z]
 
-        # move on to next table
-        x = x+1
+
+
 
     return df
 
-ConditionalParameterAggregaation(1,1,1)
