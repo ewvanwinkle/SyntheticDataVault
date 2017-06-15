@@ -39,6 +39,8 @@ host = 'localhost'
 password = ''
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
 
+
+
 # creates a schema to be followed later
 schema = CreateSchema(cur, tableNames)
 
@@ -46,6 +48,7 @@ schema = CreateSchema(cur, tableNames)
 for table in tableNames:
 
     # gets the data
+    cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
     data, colnames = PullDataPostgreSQL.ReadAndWriteTables(cur, table, save = 0)
     df = pd.DataFrame(data, columns = colnames)
     df.fillna(value=np.nan, inplace=True)
@@ -61,8 +64,8 @@ for table in tableNames:
 
     # deals with datetime values in the data. uses the datetime module to convert all
     # datetime values to EPOCH
-    dfData = df.loc[:, ~df.columns.str.contains('_id')]
-    dfData = CleanData.DatetimeToEPOCH(dfData)
+    df = pd.concat([ df[df.columns[0]], df.loc[:, ~df.columns.str.contains('_id')] ], axis=1)
+    df = CleanData.DatetimeToEPOCH(df)
 
     # Deals with categorical features in the data. this is actually somewhat
     # complicated of a process. First to identify them as categorical, several
@@ -71,12 +74,11 @@ for table in tableNames:
     # closely. it can be viewed clearly in the SDV paper itself
     #logicalCategorical = CleanData.IdentifyCategorical(df)
 
-    logicalCategorical = CleanData.IdentifyCategorical(dfData)
-    dfData = CleanData.CategoricalToContinuous(dfData,logicalCategorical)
+    logicalCategorical = CleanData.IdentifyCategorical(df)
 
     # now for the meat of the algorithm: Conditional Parameter Aggregation
-    # go inside to file for more details
-    # dfExtended = CPA.ConditionalParameterAggregaation()
+    # go inside the file for more details
+    dfExtended = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
 
 
 

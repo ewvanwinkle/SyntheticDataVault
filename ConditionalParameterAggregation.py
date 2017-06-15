@@ -93,7 +93,7 @@ def MakeFakeData(Continuous):
 
 
 
-def ConditionalParameterAggregaation(df, children, cur):
+def ConditionalParameterAggregaation(df, children, dbname, user, host, password):
     # df is the information from the original table. This includes missing value indices
     # and has all datetime values converted to EPOCH
     #
@@ -104,11 +104,27 @@ def ConditionalParameterAggregaation(df, children, cur):
 
     # now that we have a parent table and two child tables all containing continuous data,
     # I can work on the CPA algorithm
-    x = 0
-    extendedTable = [0] * len(children)
-    for child in children:
+    for childstr in children:
 
-        child, _ = PullDataPostgreSQL.ReadAndWriteTables(cur, child, save=0)
+        cur, _ = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
+        child, colnames = PullDataPostgreSQL.ReadAndWriteTables(cur, childstr, save=0)
+
+        child = pd.DataFrame(child, columns=colnames)
+        child.fillna(value=np.nan, inplace=True)
+
+        # because fuck that particular column
+        if child.columns[0] == 'staff_id':
+            child = child.drop('picture', 1)
+
+        # deals with missing values in the data. Will fill any missing values with a
+        # random point from the dataset. Also creates a new column to identify each
+        # value as a either missing or not since this can be relevant data itself
+        child = CleanData.MissingValues(child)
+
+        # deals with datetime values in the data. uses the datetime module to convert all
+        # datetime values to EPOCH
+        child = pd.concat([child[child.columns[0]], child.loc[:, ~child.columns.str.contains('_id')]], axis=1)
+        child = CleanData.DatetimeToEPOCH(child)
 
         # saves all data as categorical or not. ignores the primary key
         logicalCategorical = CleanData.IdentifyCategorical(child)
