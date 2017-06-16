@@ -26,9 +26,8 @@ from CreateSchema import CreateSchema
 import pandas as pd
 import numpy as np
 import ConditionalParameterAggregation as CPA
-import datetime
-import random
-from collections import Counter
+import FindCovariance
+import FindDistribution
 
 
 
@@ -44,11 +43,13 @@ cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, passw
 # creates a schema to be followed later
 schema = CreateSchema(cur, tableNames)
 
-# This section needs to be iteraated over every table in the database
+covarianceMatrices = [0]*len(schema)
+distributions = [0]*len(schema)
+# This section needs to be iterated over every table in the database
 for table in tableNames:
 
     # gets the data
-    cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
+    cur, _ = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
     data, colnames = PullDataPostgreSQL.ReadTables(cur, table, save = 0)
     df = pd.DataFrame(data, columns = colnames)
     df.fillna(value=np.nan, inplace=True)
@@ -57,8 +58,12 @@ for table in tableNames:
     if table == 'staff':
         df = df.drop('picture',1)
 
+    # now for the meat of the algorithm: Conditional Parameter Aggregation
+    # go inside the file for more details
+    df = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
+
     # deals with missing values in the data. Will fill any missing values with a
-    # random point from the dataset. Also creates a new column to identify each
+    # random point from the same column. Also creates a new column to identify each
     # value as a either missing or not since this can be relevant data itself
     df = CleanData.MissingValues(df)
 
@@ -67,19 +72,18 @@ for table in tableNames:
     df = pd.concat([ df[df.columns[0]], df.loc[:, ~df.columns.str.contains('_id')] ], axis=1)
     df = CleanData.DatetimeToEPOCH(df)
 
-    # Deals with categorical features in the data. this is actually somewhat
-    # complicated of a process. First to identify them as categorical, several
-    # constraints have been set. they can be seen in depth inside the first function.
-    # then to convert values ot continuous, the methodology in the SDV is followed
-    # closely. it can be viewed clearly in the SDV paper itself
-    #logicalCategorical = CleanData.IdentifyCategorical(df)
+    # saves the extended table to a .csv file. This line can be thought of as a major
+    # checkpoint in the code. now all of the data is formatted correctly and saved locally.
+    # From here out, the code should focus entirely on modeling and synthesizing. I should
+    # no longer have ot worry about data cleaning or manipulation
+    df.to_csv('~/PycharmProjects/practice/extended_%s.csv' % table)
 
-    logicalCategorical = CleanData.IdentifyCategorical(df)
 
-    # now for the meat of the algorithm: Conditional Parameter Aggregation
-    # go inside the file for more details
-    dfExtended = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
 
+    distributiontemp = FindDistribution.FindDistribution(df)
+
+
+    dftemp= FindCovariance.GaussianCopula(df)
 
 
 

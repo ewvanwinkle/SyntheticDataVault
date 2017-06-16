@@ -70,7 +70,7 @@ def DatetimeToEPOCH(df):
 
 
 def IdentifyCategorical(df):
-    # I talked with other Eric and Melissa. We determined stopgap measures for
+    # I talked with other James, Eric and Melissa. We determined stopgap measures for
     # determining categorical variables.
     #
     # 1) If it's anything but a number, it's categorical
@@ -79,27 +79,30 @@ def IdentifyCategorical(df):
     # 4) any given number had more than 10% of the instances
 
     logicalCategorical = [0] * len(df.columns)
-    x = 0
 
     for x in range(len(df.columns)):
 
-        column = df.columns[x]
+        try:
+            column = df.columns[x]
 
-        # checks for strings
-        if isinstance(df[column][0], str):
-            logicalCategorical[x] = 1
-            continue
+            # checks for strings
+            if isinstance(df[column][0], str):
+                logicalCategorical[x] = 1
+                continue
 
-        # applies mathematical constraints
-        if len(df[column].unique()) < len(df[column])/2:
-            logicalCategorical[x] = 1
-        elif all(df[column] % 1 == 0):
-            logicalCategorical[x] = 1
-        elif Counter(df[column]).most_common()[0][1] > len(df[column])/10:
+            # applies mathematical constraints
+            if len(df[column].unique()) < len(df[column])/2:
+                logicalCategorical[x] = 1
+            elif all(df[column] % 1 == 0):
+                logicalCategorical[x] = 1
+            elif Counter(df[column]).most_common()[0][1] > len(df[column])/10:
+                logicalCategorical[x] = 1
+        except:
             logicalCategorical[x] = 1
 
 
-    return logicalCategorical
+
+    return df
 
 
 

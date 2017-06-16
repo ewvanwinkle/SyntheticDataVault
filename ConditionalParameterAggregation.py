@@ -107,7 +107,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
     for childstr in children:
 
         cur, _ = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
-        child, colnames = PullDataPostgreSQL.ReadAndWriteTables(cur, childstr, save=0)
+        child, colnames = PullDataPostgreSQL.ReadTables(cur, childstr, save=0)
 
         child = pd.DataFrame(child, columns=colnames)
         child.fillna(value=np.nan, inplace=True)
@@ -137,7 +137,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
 
             column = child.columns[y]
 
-            # For categorical ones, we must create a column for each category.
+            # For categorical variables, we must create a column for each category.
             if logicalCategorical[y]:
 
                 uniqueCategories = child[child.columns[y]].unique().tolist()
@@ -184,14 +184,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
 
                     else:
 
-                        # initial dataframe to make sure that numbers aren't left out
-                        d1 = pd.DataFrame([0] * len(uniqueCategories)).T
-                        d1.columns = uniqueCategories
-
-                        # finds the percentages to be added to the df
-                        count = data[column].value_counts()
-                        count = (count + d1) / sum(count)
-                        count[count.isnull()] = 0
+                        count = CalculateCategoricalPercentage(data, uniqueCategories)
 
                         # adds the points to the correct column
                         for z in range(len(uniqueCategories)):
@@ -199,7 +192,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
                             colname = 'Categ_%s_%s_%s' % (cat, column, childstr)
                             df[colname][c] = count[cat]
 
-                # if the data is continuous
+                # if the column is continuous
                 else:
 
                     points = ['alpha', 'beta', 'loc', 'scale']
@@ -215,8 +208,18 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
                             colname = 'Cont_%s_%s_%s' % (points[z], column, childstr)
                             df[colname][c] = statistics[z]
 
-
-
-
     return df
 
+
+def CalculateCategoricalPercentage(data, uniqueCategories):
+
+    # initial dataframe to make sure that numbers aren't left out
+    d1 = pd.DataFrame([0] * len(uniqueCategories)).T
+    d1.columns = uniqueCategories
+
+    # finds the percentages to be added to the df
+    count = data[column].value_counts()
+    count = (count + d1) / sum(count)
+    count[count.isnull()] = 0
+
+    return count

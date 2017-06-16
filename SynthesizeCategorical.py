@@ -76,8 +76,3 @@ def SynthesizeCategorical(df, logicalCategorical):
             df[column] = pd.DataFrame(changedData).sample(frac=1).reset_index(drop=True)
 
     return df
-
-df1 = pd.DataFrame([item[0] for item in [random.sample([1,2,3,4,5], 1) for _ in range(500)]])
-df2 = pd.DataFrame([item[0] for item in [random.sample([1,2,3,4,5], 1) for _ in range(500)]])
-df = pd.DataFrame(pd.concat((df1,df2), axis=1), columns=['col1'])
-SynthesizeCategorical(df, [1,1,1,1])
