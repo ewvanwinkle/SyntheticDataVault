@@ -155,8 +155,8 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
 
 
 
-        # iterate over all IDs in the primary key with the intent of finding and inputting
-        # data
+        # iterate over all IDs in the primary key with the intent of finding and
+        # inputting data
         for c in range(len(df[df.columns[0]])):
 
             ID = df[df.columns[0]][c]
