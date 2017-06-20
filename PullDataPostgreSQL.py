@@ -56,4 +56,4 @@ def WriteTables(df, table):
         writer = csv.writer(the_file, dialect="custom")
         writer.writerow(df.columns)
         for row in df:
-            writer.writerow(tup)
+            writer.writerow(row)

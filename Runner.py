@@ -22,7 +22,7 @@
 
 import PullDataPostgreSQL
 import CleanData
-from CreateSchema import CreateSchema
+import CreateSchema
 import pandas as pd
 import numpy as np
 import ConditionalParameterAggregation as CPA
@@ -36,16 +36,21 @@ from collections import Counter
 dbname = 'dvdrental'
 user = 'postgres'
 host = 'localhost'
-password = ''
+password = '@uckland1994'
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
 
 
 
-# creates a schema to be followed later
-schema = CreateSchema(cur, tableNames)
+# creates a schema to be followed later. This schema needs to be organized starting
+# at leaves and going up to higher level parents
+schema = CreateSchema.CreateSchema(cur, tableNames)
+schema = CreateSchema.OrganizeSchema(schema)
 
-# This section needs to be iteraated over every table in the database
-for table in tableNames:
+
+
+
+# This section needs to be iterated over every table in the database
+for table in list(schema.keys()):
 
     # gets the data
     cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
@@ -57,6 +62,10 @@ for table in tableNames:
     if table == 'staff':
         df = df.drop('picture',1)
 
+    # now for the meat of the algorithm: Conditional Parameter Aggregation
+    # go inside the file for more details
+    df = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
+
     # deals with missing values in the data. Will fill any missing values with a
     # random point from the dataset. Also creates a new column to identify each
     # value as a either missing or not since this can be relevant data itself
@@ -64,7 +73,6 @@ for table in tableNames:
 
     # deals with datetime values in the data. uses the datetime module to convert all
     # datetime values to EPOCH
-    df = pd.concat([ df[df.columns[0]], df.loc[:, ~df.columns.str.contains('_id')] ], axis=1)
     df = CleanData.DatetimeToEPOCH(df)
 
     # Deals with categorical features in the data. this is actually somewhat
@@ -72,13 +80,10 @@ for table in tableNames:
     # constraints have been set. they can be seen in depth inside the first function.
     # then to convert values ot continuous, the methodology in the SDV is followed
     # closely. it can be viewed clearly in the SDV paper itself
-    #logicalCategorical = CleanData.IdentifyCategorical(df)
+    # logicalCategorical = CleanData.IdentifyCategorical(df)
 
-    logicalCategorical = CleanData.IdentifyCategorical(df)
-
-    # now for the meat of the algorithm: Conditional Parameter Aggregation
-    # go inside the file for more details
-    dfExtended = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
+    # writes new extended data frame to a local text file
+    PullDataPostgreSQL.WriteTables(df, table)
 
 
 

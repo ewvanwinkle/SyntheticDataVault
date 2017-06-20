@@ -2,6 +2,7 @@ import psycopg2
 import sys
 import csv
 import numpy
+from collections import Counter
 
 
 def CreateSchema(cur, tableNames):
@@ -45,4 +46,41 @@ def CreateSchema(cur, tableNames):
             count = count + 1
 
     return schema
+
+def OrganizeSchema(schema):
+
+    # The point of this function lies in the way that a database is laid out.
+    # Although a child table will always contain the primary key from it's parent,
+    # a second level child (child of a child table) will not necessarily contain said ID
+    # It is therefore important to make sure that we always start at the leaf tables
+    # and work our way upwards to more complicated tables.
+
+    # identifies all leaf tables and moves them to the front of the new schema
+    schema1 = {}
+    keys = list(schema.keys())
+    for t in keys:
+
+        if len(schema[t]) == 0:
+            schema1[t] = schema[t]
+
+    # finds all tables that only use the tables already present. appends them to
+    # the table
+    y = 0
+    while len(schema) != len(schema1):
+
+        key = keys[y % len(schema)]
+        keysTemp = list(schema1.keys())
+        if key in keysTemp:
+            y = y + 1
+            continue
+
+        c = Counter(schema[key])
+        d = Counter(keysTemp)
+        c.subtract(d)
+        if all(v <= 0 for k, v in c.items()):
+            schema1[key] = schema[key]
+
+        y = y + 1
+
+    return schema1
 
