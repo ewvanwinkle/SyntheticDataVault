@@ -64,7 +64,7 @@ for table in list(schema.keys()):
 
     # now for the meat of the algorithm: Conditional Parameter Aggregation
     # go inside the file for more details
-    df = CPA.ConditionalParameterAggregaation(df, schema[table], dbname, user, host, password)
+    df = CPA.ConditionalParameterAggregaation(df, schema[table])
 
     # deals with missing values in the data. Will fill any missing values with a
     # random point from the dataset. Also creates a new column to identify each
@@ -83,7 +83,7 @@ for table in list(schema.keys()):
     # logicalCategorical = CleanData.IdentifyCategorical(df)
 
     # writes new extended data frame to a local text file
-    PullDataPostgreSQL.WriteTables(df, table)
+    df.to_csv('%s.csv' % table)
 
 
 

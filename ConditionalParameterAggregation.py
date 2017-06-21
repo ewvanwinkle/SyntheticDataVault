@@ -93,7 +93,7 @@ def MakeFakeData(Continuous):
 
 
 
-def ConditionalParameterAggregaation(df, children, dbname, user, host, password):
+def ConditionalParameterAggregaation(df, children):
     # df is the information from the original table. This includes missing value indices
     # and has all datetime values converted to EPOCH
     #
@@ -106,31 +106,17 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
     # I can work on the CPA algorithm
     for childstr in children:
 
-        cur, _ = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
-        child, colnames = PullDataPostgreSQL.ReadTables(cur, childstr, save=0)
-
-        child = pd.DataFrame(child, columns=colnames)
+        child = pd.DataFrame.from_csv('%s.csv' %childstr)
         child.fillna(value=np.nan, inplace=True)
 
         # because fuck that particular column
         if child.columns[0] == 'staff_id':
             child = child.drop('picture', 1)
 
-        # deals with missing values in the data. Will fill any missing values with a
-        # random point from the dataset. Also creates a new column to identify each
-        # value as a either missing or not since this can be relevant data itself
-        child = CleanData.MissingValues(child)
-
-        # deals with datetime values in the data. uses the datetime module to convert all
-        # datetime values to EPOCH
-        child = pd.concat([child[child.columns[0]], child.loc[:, ~child.columns.str.contains('_id')]], axis=1)
-        child = CleanData.DatetimeToEPOCH(child)
-
         # saves all data as categorical or not. ignores the primary key
         logicalCategorical = CleanData.IdentifyCategorical(child)
 
 
-        # populates a fake dataframe with dummy data.
         # uses column names as metadata storage
         # ignores the primary key
         for y in range(1, len(child.columns)):
@@ -184,7 +170,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
 
                     else:
 
-                        count = CalculateCategoricalPercentage(data, uniqueCategories)
+                        count = CalculateCategoricalPercentage(data, uniqueCategories, column)
 
                         # adds the points to the correct column
                         for z in range(len(uniqueCategories)):
@@ -211,7 +197,7 @@ def ConditionalParameterAggregaation(df, children, dbname, user, host, password)
     return df
 
 
-def CalculateCategoricalPercentage(data, uniqueCategories):
+def CalculateCategoricalPercentage(data, uniqueCategories, column):
 
     # initial dataframe to make sure that numbers aren't left out
     d1 = pd.DataFrame([0] * len(uniqueCategories)).T

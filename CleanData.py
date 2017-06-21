@@ -102,8 +102,15 @@ def IdentifyCategorical(df):
 
 
 
+    return logicalCategorical
+
+
+def RemoveUnimportant(df):
+
+    # the point of this function is to return only columns with important data.
+    # Things that will be taken out:
+    # 1) anything with the string '_id' in it
+    # 2) any value with absolutely no variation
+
     return df
-
-
-
 

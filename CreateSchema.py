@@ -23,27 +23,24 @@ def CreateSchema(cur, tableNames):
     schema = dict()
     for table in tableNames:
 
-        # makes sure that all IDs are actually table names. Then removes the "_id' tag
-        schema[table] = [i for i in IDs[table][1:] if i[:-3] in tableNames]
-        schema[table] = [i[:-3] for i in schema[table]]
+        # makes sure that tables without any children are still present in the schema
+        try:
+            schema[table]
+        except:
+            schema[table] = []
 
-        # iterates over all options in the specific tables list
-        count = 0
-        while count < len(schema[table]):
+        # appends all of the places a child exists. creates a space for the
+        # schema if it doesnt exist yet
+        children = [i[:-3] for i in IDs[table]]
+        for child in children:
+            try:
+                schema[child]
+            except:
+                schema[child] = []
 
-            # finds the children of the 'count'eth table
-            children = IDs[schema[table][count]][1:]
-            children = [i[:-3] for i in children]
+            if child != table:
+                schema[child].append(table)
 
-            # keeps duplicates out. Also makes sure that all IDs are tables
-            for x in children:
-                if x in schema[table]:
-                    continue
-                else:
-                    if x in tableNames:
-                        schema[table].extend([x])
-
-            count = count + 1
 
     return schema
 

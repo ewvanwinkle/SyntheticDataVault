@@ -48,12 +48,3 @@ def ReadTables(cur, table, save):
 
     return data, colnames
 
-
-def WriteTables(df, table):
-
-    with open('%s.txt' % table, "w") as the_file:
-        csv.register_dialect("custom", delimiter=" ", skipinitialspace=True)
-        writer = csv.writer(the_file, dialect="custom")
-        writer.writerow(df.columns)
-        for row in df:
-            writer.writerow(row)
