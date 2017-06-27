@@ -55,15 +55,11 @@ def DatetimeToEPOCH(df):
             # converts all datetimes to EPOCH
             y = 0
             try:
-                df[column + '_EPOCH'] = [0]*len(df)
+                df[column] = df[column].astype(np.int64) // 10**9
+                df.rename(columns={column: column + '_EPOCH'}, inplace=True)
             except:
                 pass
 
-            for y in range(len(df[column])):
-                df.loc[y, column + '_EPOCH'] = (df.loc[y, column] - datetime.datetime(1970, 1, 1)).total_seconds()
-                y = y+1
-
-            df = df.drop(column,1)
 
     return df
 
@@ -85,10 +81,13 @@ def IdentifyCategorical(df):
         try:
             column = df.columns[x]
 
-            # checks for strings
+            # checks for strings and datetimes
             if isinstance(df[column][0], str):
                 logicalCategorical[x] = 1
+            elif column[-6:] == '_EPOCH':
                 continue
+            else:
+                pass
 
             # applies mathematical constraints
             if len(df[column].unique()) < len(df[column])/2:

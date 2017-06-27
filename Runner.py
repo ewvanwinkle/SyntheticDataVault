@@ -36,7 +36,7 @@ from collections import Counter
 dbname = 'dvdrental'
 user = 'postgres'
 host = 'localhost'
-password = '@uckland1994'
+password = ''
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
 
 
@@ -47,8 +47,6 @@ schema = CreateSchema.CreateSchema(cur, tableNames)
 schema = CreateSchema.OrganizeSchema(schema)
 
 
-
-
 # This section needs to be iterated over every table in the database
 for table in list(schema.keys()):
 
@@ -57,10 +55,15 @@ for table in list(schema.keys()):
     data, colnames = PullDataPostgreSQL.ReadTables(cur, table, save = 0)
     df = pd.DataFrame(data, columns = colnames)
     df.fillna(value=np.nan, inplace=True)
+    # print(table, len(df))
 
     # because fuck that particular column
     if table == 'staff':
         df = df.drop('picture',1)
+
+    # deals with datetime values in the data. uses the datetime module to convert all
+    # datetime values to EPOCH
+    df = CleanData.DatetimeToEPOCH(df)
 
     # now for the meat of the algorithm: Conditional Parameter Aggregation
     # go inside the file for more details
@@ -70,10 +73,6 @@ for table in list(schema.keys()):
     # random point from the dataset. Also creates a new column to identify each
     # value as a either missing or not since this can be relevant data itself
     df = CleanData.MissingValues(df)
-
-    # deals with datetime values in the data. uses the datetime module to convert all
-    # datetime values to EPOCH
-    df = CleanData.DatetimeToEPOCH(df)
 
     # Deals with categorical features in the data. this is actually somewhat
     # complicated of a process. First to identify them as categorical, several
