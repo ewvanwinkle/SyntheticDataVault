@@ -26,11 +26,12 @@ import CreateSchema
 import pandas as pd
 import numpy as np
 import ConditionalParameterAggregation as CPA
+import FindDistribution
+import FindCovariance
 import datetime
 import random
 from collections import Counter
-import FindDistribution
-import FindCovariance
+
 
 
 # connects to the database
@@ -39,6 +40,7 @@ user = 'postgres'
 host = 'localhost'
 password = '@uckland1994'
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
+
 
 
 # creates a schema to be followed later. This schema needs to be organized starting
@@ -55,7 +57,6 @@ for table in list(schema.keys()):
     data, colnames = PullDataPostgreSQL.ReadTables(cur, table, save = 0)
     df = pd.DataFrame(data, columns = colnames)
     df.fillna(value=np.nan, inplace=True)
-    # print(table, len(df))
 
     # because fuck that particular column
     if table == 'staff':
@@ -74,18 +75,11 @@ for table in list(schema.keys()):
     # value as a either missing or not since this can be relevant data itself
     df = CleanData.MissingValues(df)
 
-    # Deals with categorical features in the data. this is actually somewhat
-    # complicated of a process. First to identify them as categorical, several
-    # constraints have been set. they can be seen in depth inside the first function.
-    # then to convert values ot continuous, the methodology in the SDV is followed
-    # closely. it can be viewed clearly in the SDV paper itself
-    # logicalCategorical = CleanData.IdentifyCategorical(df)
-
     # writes new extended data frame to a local text file
     df.to_csv('%s.csv' % table)
 
 
-# that condludes the portion of our file surrounding making data.
+# that concludes the portion of our file surrounding making data.
 # Now that we have all of the data in cleaned, organized CSVs,
 # we can get values fom them
 for table in list(schema.keys()):
@@ -93,5 +87,12 @@ for table in list(schema.keys()):
     # gets extended table
     df = pd.DataFrame.from_csv('%s.csv' % table)
 
-    # finds the best distribution , pvalues and parameters
+    # finds the best distribution , pvalues and parameters and categorical variables
     bestDistribution, param, pvalue = FindDistribution.FindDistribution(df)
+    logicalCategorical = CleanData.IdentifyCategorical(df)
+
+    #Finds the covariance matrix of the table
+    df = FindCovariance.GaussianCopula(df, param, bestDistribution, logicalCategorical)
+    cov = df.cov
+
+
