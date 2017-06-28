@@ -29,16 +29,16 @@ import ConditionalParameterAggregation as CPA
 import datetime
 import random
 from collections import Counter
-
+import FindDistribution
+import FindCovariance
 
 
 # connects to the database
 dbname = 'dvdrental'
 user = 'postgres'
 host = 'localhost'
-password = ''
+password = '@uckland1994'
 cur, tableNames = PullDataPostgreSQL.ConnectToDatabase(dbname, user, host, password)
-
 
 
 # creates a schema to be followed later. This schema needs to be organized starting
@@ -85,11 +85,13 @@ for table in list(schema.keys()):
     df.to_csv('%s.csv' % table)
 
 
+# that condludes the portion of our file surrounding making data.
+# Now that we have all of the data in cleaned, organized CSVs,
+# we can get values fom them
+for table in list(schema.keys()):
 
+    # gets extended table
+    df = pd.DataFrame.from_csv('%s.csv' % table)
 
-
-
-
-
-
-
+    # finds the best distribution , pvalues and parameters
+    bestDistribution, param, pvalue = FindDistribution.FindDistribution(df)

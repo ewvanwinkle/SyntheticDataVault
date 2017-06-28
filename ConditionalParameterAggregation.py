@@ -222,4 +222,3 @@ def MakeFakeData(Continuous):
         child2.columns = ['df_id', 'data1', 'data2', 'data3', 'data4']
 
     return df, child1, child2
-
